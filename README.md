@@ -1,6 +1,6 @@
 # No Scroll / 别刷了
 
-An experimental front-end concept that turns the public [`follow-builders`](https://github.com/zarazhangrui/follow-builders) feed into a pixel-style daily AI digest.
+Energy is valuable. Only read what matters to you as I don't want to read too much information every day.An experimental front-end concept that turns the public [`follow-builders`](https://github.com/zarazhangrui/follow-builders) feed into a pixel-style daily AI digest.
 
 ## Credit First
 
