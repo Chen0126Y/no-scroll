@@ -1,0 +1,2754 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 每日闯关 · Builder's Quest</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+      --bg: #070b11;
+      --surface: #111826;
+      --card: #182235;
+      --border: #30415e;
+      --accent: #ffd166;
+      --accent2: #7dd3fc;
+      --accent3: #ff8a5b;
+      --green: #7ee787;
+      --text: #f5f7ff;
+      --muted: #9fb0cb;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans SC', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: default;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.stars {
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 15%, rgba(240,192,64,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 40%, rgba(64,192,240,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 20%, rgba(240,192,64,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 55%, rgba(64,192,240,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 50% 80%, rgba(240,64,128,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 20% 70%, rgba(64,240,128,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 30%, rgba(240,192,64,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 90%, rgba(64,192,240,0.3) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pixel-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  padding: 12px 20px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.1s;
+  letter-spacing: 0.5px;
+  line-height: 1.6;
+}
+
+.pixel-btn::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+
+.pixel-btn:active { transform: translate(2px, 2px); }
+.pixel-btn.yellow { background: var(--accent); color: #0a0a0f; }
+.pixel-btn.yellow::after { background: #a08020; }
+.pixel-btn.blue { background: var(--accent2); color: #0a0a0f; }
+.pixel-btn.blue::after { background: #207080; }
+.pixel-btn.green { background: var(--green); color: #0a0a0f; }
+.pixel-btn.green::after { background: #208040; }
+.pixel-btn.red { background: var(--accent3); color: #fff; }
+.pixel-btn.red::after { background: #801040; }
+.pixel-btn.ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 2px solid var(--border);
+}
+.pixel-btn.ghost::after { background: transparent; }
+.pixel-btn.ghost:hover { color: var(--text); border-color: var(--muted); }
+
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.screen.active { display: flex; flex-direction: column; }
+
+#landing {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.game-logo {
+  margin-bottom: 40px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.logo-pixel {
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(18px, 4vw, 32px);
+  color: var(--accent);
+  text-shadow: 4px 4px 0 #a08020, 0 0 40px rgba(240,192,64,0.3);
+  line-height: 1.6;
+  display: block;
+}
+
+.logo-sub {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  color: var(--accent2);
+  margin-top: 8px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.date-badge {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.mode-select-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: var(--accent2);
+  margin-bottom: 30px;
+  text-shadow: 0 0 20px rgba(64,192,240,0.5);
+}
+
+.mode-cards {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 900px;
+  margin: 0 auto 40px;
+}
+
+.mode-card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  padding: 28px 24px;
+  width: 260px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  text-align: center;
+}
+
+.mode-card::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 2px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.mode-card:hover { transform: translateY(-4px); border-color: var(--accent); }
+.mode-card:hover::before { border-color: rgba(240,192,64,0.2); }
+
+.mode-icon {
+  font-size: 40px;
+  margin-bottom: 16px;
+  display: block;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.mode-card:nth-child(2) .mode-icon { animation-delay: 0.3s; }
+.mode-card:nth-child(3) .mode-icon { animation-delay: 0.6s; }
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.mode-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: var(--accent);
+  margin-bottom: 10px;
+  display: block;
+}
+
+.mode-time {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--accent2);
+  margin-bottom: 12px;
+  display: block;
+}
+
+.mode-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.lang-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+  display: flex;
+  gap: 8px;
+}
+
+.lang-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 2px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lang-btn.active, .lang-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#game { padding: 0; }
+
+.game-header {
+  background: var(--surface);
+  border-bottom: 2px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.progress-bar-wrap {
+  flex: 1;
+  max-width: 300px;
+  margin: 0 20px;
+}
+
+.progress-bar-track {
+  height: 12px;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.5s ease;
+  position: relative;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 6px;
+  background: #fff;
+  opacity: 0.6;
+  animation: blink 0.5s step-end infinite;
+}
+
+@keyframes blink { 50% { opacity: 0; } }
+
+.progress-text {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: var(--muted);
+  margin-top: 4px;
+  text-align: center;
+}
+
+.score-display {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--green);
+}
+
+.level-display {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--accent);
+}
+
+.news-stage {
+  flex: 1;
+  padding: 30px 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.news-card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  padding: 28px;
+  margin-bottom: 24px;
+  position: relative;
+  animation: slideIn 0.4s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.news-card::before {
+  content: attr(data-rank);
+  position: absolute;
+  top: -12px;
+  left: 16px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  background: var(--accent);
+  color: #0a0a0f;
+  padding: 3px 8px;
+}
+
+.news-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.source-badge {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  padding: 3px 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.source-x {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #e0e0f0;
+}
+
+.source-yt {
+  background: rgba(255,60,60,0.12);
+  border: 1px solid rgba(255,60,60,0.3);
+  color: #ff6060;
+}
+
+.source-li {
+  background: rgba(64,120,220,0.12);
+  border: 1px solid rgba(64,120,220,0.3);
+  color: #6090f0;
+}
+
+.source-web {
+  background: rgba(64,192,240,0.1);
+  border: 1px solid rgba(64,192,240,0.25);
+  color: var(--accent2);
+}
+
+.date-tag {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.news-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.hot-score {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--accent3);
+}
+
+.stat-item {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.stat-divider {
+  color: var(--border);
+  font-size: 12px;
+}
+
+.news-title-main {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+
+.news-title-sub {
+  font-size: 13px;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.author-tag {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--accent2);
+  background: rgba(64,192,240,0.1);
+  border: 1px solid rgba(64,192,240,0.3);
+  padding: 3px 10px;
+}
+
+.analogy-box {
+  background: rgba(240,192,64,0.07);
+  border-left: 3px solid var(--accent);
+  padding: 14px 16px;
+  margin: 14px 0;
+  font-size: 14px;
+  color: #c0b060;
+  line-height: 1.7;
+}
+
+.analogy-box::before {
+  content: attr(data-label);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.game-zone {
+  margin-top: 24px;
+  padding: 20px;
+  background: rgba(10,10,15,0.8);
+  border: 2px solid var(--border);
+}
+
+.game-zone-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--accent2);
+  margin-bottom: 18px;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(64,192,240,0.5);
+}
+
+.drag-game {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.drag-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 200px;
+}
+
+.drag-col-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.drag-item {
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  font-size: 13px;
+  cursor: grab;
+  background: var(--surface);
+  transition: all 0.2s;
+  user-select: none;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.drag-item:hover { border-color: var(--accent); transform: scale(1.02); }
+.drag-item.dragging { opacity: 0.5; transform: scale(0.95); }
+.drag-item.matched { border-color: var(--green); background: rgba(64,240,128,0.1); color: var(--green); cursor: default; }
+.drag-item.wrong { border-color: var(--accent3); animation: shake 0.3s; }
+
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.drop-zone {
+  padding: 10px 14px;
+  border: 2px dashed var(--border);
+  font-size: 12px;
+  color: var(--muted);
+  background: rgba(0,0,0,0.3);
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.drop-zone.drag-over { border-color: var(--accent2); background: rgba(64,192,240,0.08); }
+.drop-zone.filled { border-style: solid; border-color: var(--green); background: rgba(64,240,128,0.08); color: var(--green); }
+
+.choice-question {
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 18px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.choice-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.choice-btn {
+  padding: 16px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  line-height: 1.6;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+
+.choice-btn:hover { border-color: var(--accent2); background: rgba(64,192,240,0.08); }
+.choice-btn.correct { border-color: var(--green); background: rgba(64,240,128,0.1); color: var(--green); }
+.choice-btn.wrong { border-color: var(--accent3); background: rgba(240,64,128,0.1); color: var(--accent3); }
+.choice-btn.disabled { cursor: default; pointer-events: none; }
+
+.feedback-box {
+  margin-top: 16px;
+  padding: 14px;
+  background: rgba(64,240,128,0.08);
+  border: 2px solid var(--green);
+  font-size: 13px;
+  color: var(--green);
+  line-height: 1.7;
+  display: none;
+}
+
+.feedback-box.show { display: block; animation: slideIn 0.3s; }
+.feedback-box.wrong-fb { border-color: var(--accent3); color: var(--accent3); background: rgba(240,64,128,0.08); }
+
+.quick-summary {
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--text);
+  padding: 16px;
+  background: rgba(64,192,240,0.05);
+  border-left: 3px solid var(--accent2);
+}
+
+.quick-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.quick-tag {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  padding: 4px 10px;
+  background: rgba(240,192,64,0.1);
+  border: 1px solid rgba(240,192,64,0.3);
+  color: var(--accent);
+}
+
+.nav-area {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  padding: 10px 0 30px;
+  flex-wrap: wrap;
+}
+
+#complete {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.complete-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 20px;
+  color: var(--accent);
+  text-shadow: 4px 4px 0 #a08020, 0 0 40px rgba(240,192,64,0.5);
+  margin-bottom: 20px;
+  animation: rainbow 2s linear infinite;
+}
+
+@keyframes rainbow {
+  0% { color: var(--accent); }
+  33% { color: var(--accent2); }
+  66% { color: var(--green); }
+  100% { color: var(--accent); }
+}
+
+.complete-score {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 40px;
+  color: var(--accent);
+  text-shadow: 4px 4px 0 #a08020;
+  display: block;
+  margin: 20px 0;
+}
+
+.complete-msg {
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 500px;
+  line-height: 1.8;
+  margin-bottom: 30px;
+}
+
+.coins-animation {
+  font-size: 32px;
+  animation: coinSpin 0.5s ease-in-out infinite alternate;
+  display: block;
+  margin: 16px 0;
+}
+
+@keyframes coinSpin {
+  from { transform: rotateY(0deg) scale(1); }
+  to { transform: rotateY(30deg) scale(1.1); }
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,10,15,0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.loading-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  margin-bottom: 30px;
+  animation: blink 0.8s step-end infinite;
+}
+
+.loading-bar-wrap {
+  width: 300px;
+  height: 20px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.loading-bar {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.3s;
+}
+
+.loading-msg {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  max-width: 320px;
+  line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+  .choice-options { grid-template-columns: 1fr; }
+  .drag-game { flex-direction: column; align-items: center; }
+  .drag-col { min-width: 260px; width: 100%; max-width: 320px; }
+  .mode-card { width: 100%; max-width: 320px; }
+  .game-header { padding: 12px; gap: 8px; }
+  .progress-bar-wrap { margin: 0 8px; }
+}
+    body {
+      font-size: 18px;
+      line-height: 1.65;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    .global-home-btn {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      z-index: 50;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 2px solid var(--accent2);
+      background: rgba(17, 24, 38, 0.94);
+      color: var(--text);
+      text-decoration: none;
+      box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.08);
+      font-size: 15px;
+      white-space: nowrap;
+    }
+
+    .global-home-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .hero-slogan {
+      margin: 12px auto 0;
+      max-width: 760px;
+      color: var(--accent);
+      font-size: 24px;
+      line-height: 1.5;
+      text-align: center;
+      text-shadow: 0 0 10px rgba(255, 209, 102, 0.18);
+    }
+
+    .auth-card {
+      margin: 26px auto 0;
+      max-width: 760px;
+      padding: 22px;
+      border: 2px solid var(--border);
+      background: rgba(24, 34, 53, 0.9);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    }
+
+    .auth-title {
+      margin: 0 0 10px;
+      color: var(--accent2);
+      font-size: 24px;
+    }
+
+    .auth-copy {
+      margin: 0 0 18px;
+      color: var(--text);
+      font-size: 17px;
+    }
+
+    .auth-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    .auth-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px 14px;
+      border: 2px solid var(--border);
+      background: rgba(7, 11, 17, 0.96);
+      color: var(--text);
+    }
+
+    .auth-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .auth-status {
+      margin-top: 14px;
+      color: var(--green);
+      font-size: 16px;
+    }
+
+    .notes-panel {
+      margin-top: 24px;
+      padding: 18px;
+      border: 2px solid var(--border);
+      background: rgba(17, 24, 38, 0.85);
+    }
+
+    .notes-title {
+      margin: 0 0 8px;
+      color: var(--accent2);
+      font-size: 22px;
+    }
+
+    .notes-copy {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .notes-input {
+      width: 100%;
+      min-height: 120px;
+      box-sizing: border-box;
+      padding: 14px;
+      border: 2px solid var(--border);
+      background: rgba(7, 11, 17, 0.96);
+      color: var(--text);
+      resize: vertical;
+    }
+
+    .notes-meta {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .calendar-panel {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(159, 176, 203, 0.25);
+    }
+
+    .calendar-title {
+      margin: 0 0 10px;
+      color: var(--accent);
+      font-size: 20px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .calendar-day,
+    .calendar-cell {
+      min-height: 54px;
+      padding: 8px 6px;
+      border: 1px solid var(--border);
+      background: rgba(7, 11, 17, 0.88);
+      text-align: left;
+      color: var(--text);
+    }
+
+    .calendar-day {
+      min-height: auto;
+      color: var(--muted);
+      background: transparent;
+      border: none;
+      padding: 0 0 4px;
+      font-size: 13px;
+    }
+
+    .calendar-cell.has-history {
+      border-color: var(--accent2);
+      box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.18);
+    }
+
+    .calendar-cell.has-note {
+      border-color: var(--accent);
+    }
+
+    .calendar-cell strong {
+      display: block;
+      font-size: 16px;
+    }
+
+    .calendar-mark {
+      display: block;
+      margin-top: 4px;
+      color: var(--accent);
+      font-size: 13px;
+    }
+
+    .calendar-detail {
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      background: rgba(7, 11, 17, 0.88);
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    .calendar-shortcut {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 10px 14px;
+      border: 2px solid var(--accent);
+      background: rgba(255, 209, 102, 0.1);
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    #game,
+    #game * {
+      color-scheme: dark;
+    }
+
+    #game .drag-item,
+    #game .drop-zone,
+    #game .choice-btn,
+    #game .pixel-card,
+    #game .news-card,
+    #game .question-card,
+    #game .notes-panel {
+      background: var(--card) !important;
+      color: var(--text) !important;
+      border-color: var(--border) !important;
+      filter: none !important;
+    }
+
+    #game .drag-item {
+      cursor: grab !important;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    #game .drag-item.is-selected {
+      border-color: var(--accent) !important;
+      box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.2), 0 0 18px rgba(255, 209, 102, 0.18) !important;
+      color: var(--accent) !important;
+    }
+
+    #game .drop-zone {
+      min-height: 58px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    #game .drop-zone.is-filled {
+      border-color: var(--green) !important;
+      color: var(--green) !important;
+    }
+
+    .deep-match-helper {
+      margin: 12px 0;
+      color: var(--accent);
+      font-size: 15px;
+      width: 100%;
+      box-sizing: border-box;
+      flex: 0 0 100%;
+    }
+
+    #game .drag-game {
+      display: grid !important;
+      grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) !important;
+      gap: 30px !important;
+      align-items: start !important;
+      justify-content: stretch !important;
+      flex-direction: initial !important;
+      flex-wrap: nowrap !important;
+      width: 100% !important;
+      overflow-x: auto;
+    }
+
+    #game .drag-col {
+      width: auto !important;
+      max-width: none !important;
+      min-width: 0 !important;
+    }
+
+    #game .drag-col:first-child {
+      grid-column: 1 !important;
+    }
+
+    #game .drag-col:last-child {
+      grid-column: 2 !important;
+    }
+  </style>
+</head>
+<body>
+<div class="stars"></div>
+
+<div class="lang-toggle">
+  <button class="lang-btn active" onclick="setLang('zh')" id="btn-zh">中文</button>
+  <button class="lang-btn" onclick="setLang('en')" id="btn-en">EN</button>
+</div>
+
+<div class="loading-overlay" id="loading">
+  <div class="loading-title" id="loading-title">LOADING...</div>
+  <div class="loading-bar-wrap">
+    <div class="loading-bar" id="loading-bar"></div>
+  </div>
+  <div class="loading-msg" id="loading-msg">正在抓取今日 Builder 动态...</div>
+</div>
+
+<div class="screen active" id="landing">
+  <div style="text-align:center; padding: 60px 20px 0;">
+    <div class="game-logo">
+      <span class="logo-pixel" id="logo-main">AI 每日闯关</span>
+      <span class="logo-pixel" style="font-size:clamp(10px,2vw,16px); color: var(--accent2);">BUILDER'S QUEST</span>
+      <div class="logo-sub" id="logo-sub">DAILY AI KNOWLEDGE GAME</div>
+      <div class="date-badge" id="date-badge">2026.03.27</div>
+    </div>
+
+    <div class="mode-select-title" id="mode-title">── 选择你的闯关模式 ──</div>
+
+    <div class="mode-cards">
+      <div class="mode-card" onclick="startGame('quick')">
+        <span class="mode-icon">⚡</span>
+        <span class="mode-name" id="m1-name">快速通关</span>
+        <span class="mode-time" id="m1-time">≈ 2 分钟</span>
+        <p class="mode-desc" id="m1-desc">5 条精华，一眼扫完<br>适合快速了解今天发生了什么</p>
+      </div>
+      <div class="mode-card" onclick="startGame('normal')">
+        <span class="mode-icon">🎮</span>
+        <span class="mode-name" id="m2-name">标准闯关</span>
+        <span class="mode-time" id="m2-time">≈ 5 分钟</span>
+        <p class="mode-desc" id="m2-desc">原文线索 + 选择题<br>在真实 feed 上做轻交互</p>
+      </div>
+      <div class="mode-card" onclick="startGame('deep')">
+        <span class="mode-icon">🏆</span>
+        <span class="mode-name" id="m3-name">深度探索</span>
+        <span class="mode-time" id="m3-time">≈ 10 分钟</span>
+        <p class="mode-desc" id="m3-desc">拖拽配对 + 结构阅读<br>不改 UI，只把数据改成真实 feed</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 10px;">
+      <p id="source-line" style="font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted);">
+        来源：follow-builders 的公开 feed，自动更新，无需产品自身 API
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="game">
+  <div class="game-header">
+    <div class="level-display" id="level-display">LEVEL 1/5</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+      <div class="progress-text" id="progress-text">0 / 5 完成</div>
+    </div>
+    <div class="score-display" id="score-display">★ 0 pts</div>
+  </div>
+
+  <div class="news-stage" id="news-stage"></div>
+</div>
+
+<div class="screen" id="complete">
+  <span class="complete-title" id="complete-title">🎉 今日通关！</span>
+  <span class="coins-animation">🪙</span>
+  <span class="complete-score" id="final-score">0</span>
+  <p class="complete-msg" id="complete-msg">你已完成今日动态浏览，明天继续闯关。</p>
+  <div style="display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-bottom:30px;">
+    <button class="pixel-btn yellow" onclick="showLanding()" id="play-again-btn">再来一次</button>
+    <button class="pixel-btn blue" onclick="shareScore()" id="share-btn">分享战绩</button>
+  </div>
+
+  <div style="max-width:700px; width:100%; text-align:left;">
+    <div id="digest-header" style="font-family:'Press Start 2P',monospace; font-size:9px; color:var(--muted); margin-bottom:16px; text-align:center;">── 今日完整精华 ──</div>
+    <div id="digest-list"></div>
+  </div>
+</div>
+
+<script>
+const FEED_SOURCES = {
+  x: [
+    "https://raw.githubusercontent.com/zarazhangrui/follow-builders/main/feed-x.json",
+    "https://cdn.jsdelivr.net/gh/zarazhangrui/follow-builders@main/feed-x.json"
+  ],
+  podcasts: [
+    "https://raw.githubusercontent.com/zarazhangrui/follow-builders/main/feed-podcasts.json",
+    "https://cdn.jsdelivr.net/gh/zarazhangrui/follow-builders@main/feed-podcasts.json"
+  ],
+  blogs: [
+    "https://raw.githubusercontent.com/zarazhangrui/follow-builders/main/feed-blogs.json",
+    "https://cdn.jsdelivr.net/gh/zarazhangrui/follow-builders@main/feed-blogs.json"
+  ]
+};
+
+let gameMode = 'normal';
+let currentLevel = 0;
+let score = 0;
+let lang = 'zh';
+let currentScreen = 'landing';
+let FEED_DATA = null;
+let GAME_ITEMS = [];
+let dragSource = null;
+let matchedCount = 0;
+let LAST_FETCHED_AT = 0;
+
+function t(zh, en) { return lang === 'zh' ? zh : en; }
+
+function esc(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function cleanText(text) {
+  return String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function splitSentences(text) {
+  return String(text || '')
+    .split(/\n+/)
+    .map(part => part.trim())
+    .filter(Boolean)
+    .flatMap(part => part.split(/(?<=[.!?。！？])\s+/))
+    .map(part => part.trim())
+    .filter(Boolean);
+}
+
+function firstSentence(text) {
+  return splitSentences(text).find(part => part.length > 18) || cleanText(text).slice(0, 120);
+}
+
+function formatDate(dateValue) {
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return '--';
+  if (lang === 'zh') return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`;
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function formatDateForLang(dateValue, targetLang) {
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return '--';
+  if (targetLang === 'zh') return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`;
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function getSourceBadge(url) {
+  if (!url) return `<span class="source-badge source-web">🌐 Web</span>`;
+  if (url.includes('x.com') || url.includes('twitter.com')) return `<span class="source-badge source-x">𝕏 X</span>`;
+  if (url.includes('youtube.com') || url.includes('youtu.be')) return `<span class="source-badge source-yt">▶ YouTube</span>`;
+  if (url.includes('linkedin.com')) return `<span class="source-badge source-li">in LinkedIn</span>`;
+  return `<span class="source-badge source-web">🌐 Web</span>`;
+}
+
+function getLocalizedField(obj, base, targetLang, fallback = true) {
+  if (!obj) return '';
+  const zhValue = obj[`${base}Zh`] || obj.translations?.zh?.[base] || obj.i18n?.zh?.[base];
+  const enValue = obj[`${base}En`] || obj.translations?.en?.[base] || obj.i18n?.en?.[base] || obj[base];
+  if (targetLang === 'zh') return zhValue || (fallback ? enValue || '' : '');
+  return enValue || obj[base] || '';
+}
+
+function hasStrictZh(obj, fields) {
+  return fields.some(field => Boolean(getLocalizedField(obj, field, 'zh', false)));
+}
+
+function keywordCategory(text) {
+  const value = String(text || '').toLowerCase();
+  if (/(agent|claude|codex|mcp|assistant|automation)/.test(value)) {
+    return { zh: 'AI 代理与工作流', en: 'AI agents and workflow', tags: ['agents', 'workflow', 'tools'] };
+  }
+  if (/(security|credential|attack|password|auth)/.test(value)) {
+    return { zh: '安全与权限', en: 'security and permissions', tags: ['security', 'credentials', 'access'] };
+  }
+  if (/(deploy|vercel|sandbox|cli|devops|database|service|infra)/.test(value)) {
+    return { zh: '基础设施与部署', en: 'infra and deployment', tags: ['infra', 'deploy', 'devops'] };
+  }
+  if (/(product|feature|chat|memory|context|ui|app)/.test(value)) {
+    return { zh: '产品能力与体验', en: 'product capability and UX', tags: ['product', 'ux', 'feature'] };
+  }
+  if (/(vaccine|cancer|bio|medicine|health)/.test(value)) {
+    return { zh: '生命科学与医疗', en: 'life sciences and health', tags: ['health', 'bio', 'science'] };
+  }
+  return { zh: 'Builder 观点与趋势', en: 'builder view and trend', tags: ['builders', 'trend', 'signal'] };
+}
+
+function scoreX(tweet) {
+  return (tweet.likes || 0) + (tweet.retweets || 0) * 3 + (tweet.replies || 0) * 2;
+}
+
+function scoreGeneric(dateValue, boost = 600) {
+  const ts = new Date(dateValue || 0).getTime() || 0;
+  return boost + Math.floor(ts / 10000000000);
+}
+
+function normalizeForSignal(text) {
+  return String(text || '')
+    .replace(/https?:\/\/\S+/g, ' ')
+    .replace(/@\w+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function signalWordCount(text) {
+  const normalized = normalizeForSignal(text);
+  if (!normalized) return 0;
+  return normalized.split(/\s+/).filter(Boolean).length;
+}
+
+function transcriptSentences(text) {
+  return String(text || '')
+    .replace(/\[[^\]]+\]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .split(/(?<=[.!?])\s+/)
+    .map(sentence => sentence.trim())
+    .filter(sentence => sentence.length > 35);
+}
+
+function extractLongformSummary(text, maxSentences = 2) {
+  const sentences = transcriptSentences(text);
+  if (!sentences.length) return '';
+
+  const keywords = [
+    'agent', 'agents', 'company', 'product', 'build', 'building', 'launch', 'launched',
+    'startup', 'software', 'team', 'automate', 'automation', 'manager', 'engineering',
+    'support', 'sales', 'deploy', 'infrastructure', 'platform'
+  ];
+
+  const scored = sentences.map((sentence, idx) => {
+    const lower = sentence.toLowerCase();
+    let score = 0;
+    keywords.forEach(keyword => {
+      if (lower.includes(keyword)) score += 2;
+    });
+    if (sentence.length >= 60 && sentence.length <= 240) score += 2;
+    if (/(we|our|you can|this is|we're|we are)/i.test(sentence)) score += 1;
+    if (idx < 18) score += 1;
+    return { sentence, idx, score };
+  });
+
+  return scored
+    .sort((a, b) => b.score - a.score || a.idx - b.idx)
+    .slice(0, maxSentences)
+    .sort((a, b) => a.idx - b.idx)
+    .map(item => item.sentence)
+    .join(' ');
+}
+
+function isLowSignalXTweet(tweet) {
+  const raw = String(tweet?.text || '').trim();
+  const normalized = normalizeForSignal(raw);
+  const words = signalWordCount(raw);
+  const sentenceCount = splitSentences(raw).length;
+  const hasSlashLead = /^[/\\]/.test(raw);
+  const hasOnlyLinkishText = normalized.length < 18;
+  const hasReactionOnlyPattern = /^(lmao|wow|nice|same|true|wild|insane|i agree|exactly)$/i.test(normalized);
+  const isShortQuoteReaction = tweet?.isQuote && words < 8;
+  const isThinOneLiner = words < 6 && sentenceCount <= 1;
+  const isMostlyPointers = /(see ya there|watch on youtube|listen on spotify|useful technique)/i.test(normalized) && words < 10;
+  return hasSlashLead || hasOnlyLinkishText || hasReactionOnlyPattern || isShortQuoteReaction || isThinOneLiner || isMostlyPointers;
+}
+
+function deriveSourceLabel(entry, targetLang = lang) {
+  if (entry.source === 'x') return 'X / Twitter';
+  if (entry.source === 'podcast') return targetLang === 'zh' ? '播客' : 'Podcast';
+  return targetLang === 'zh' ? '博客' : 'Blog';
+}
+
+function deriveReadingNote(entry, category) {
+  if (entry.type === 'podcast') {
+    return {
+      zh: '如果你对这个话题感兴趣，这条更适合直接打开原视频。它提供的是一段完整讨论，不是几句社交媒体碎片。',
+      en: 'If this topic interests you, this one is best opened directly as the original video. It is a full discussion, not a few fragmented social snippets.'
+    };
+  }
+  if (entry.type === 'blog') {
+    return {
+      zh: '如果你想进一步理解这个观点，这条更适合直接打开原文，因为它本身就是一次完整表达。',
+      en: 'If you want to understand the idea in more depth, this one is best opened directly because it is already a full written take.'
+    };
+  }
+  const sentence = firstSentence(entry.text);
+  return {
+    zh: `你可以先抓这一句来理解它在说什么：${sentence}`,
+    en: `Start with this line to understand the signal quickly: ${sentence}`
+  };
+}
+
+function buildUserChoices(entry, category) {
+  const signal = firstSentence(entry.summaryEn || entry.summaryZh || entry.text || entry.titleEn);
+  if (entry.type === 'podcast') {
+    return {
+      questionZh: '如果你现在决定要不要点开原视频，你最应该记住的是什么？',
+      questionEn: 'If you are deciding whether to open the original video now, what is the key takeaway?',
+      choicesZh: [
+        `这更像一段关于${category.zh}的完整分享，值得感兴趣时直接去看原视频`,
+        '这只是一个几秒钟就能看完的短通知，不需要点开',
+        '这主要是在展示社交互动数据，而不是内容本身',
+        '这基本没有可继续阅读的信息'
+      ],
+      choicesEn: [
+        `This is a fuller discussion about ${category.en}, so it is worth opening if the topic matters to you`,
+        'This is just a tiny notice and not worth opening',
+        'The main value here is the social engagement data, not the content',
+        'There is basically nothing more to learn by opening it'
+      ],
+      feedbackZh: '✅ 正解。对播客这类长内容，用户视角最重要的不是先分类，而是判断“这个话题值不值得我马上点开继续看”。',
+      feedbackEn: '✅ Correct. For long-form podcast content, the user-facing judgment is not just classification, but whether the topic is worth opening right away.'
+    };
+  }
+
+  if (entry.type === 'blog') {
+    return {
+      questionZh: '如果你只花 10 秒判断，这条最值得你注意的是什么？',
+      questionEn: 'If you only spend 10 seconds deciding, what is most worth noticing here?',
+      choicesZh: [
+        `这是一条围绕${category.zh}展开的完整原文，适合想看细节时直接打开`,
+        '这主要只是一个作者个人生活状态更新',
+        '这条内容的重点是互动数字本身',
+        '这条内容基本没有继续阅读价值'
+      ],
+      choicesEn: [
+        `This is a full write-up around ${category.en}, so it is worth opening for detail`,
+        'This is mainly a casual life update from the author',
+        'The key point here is the engagement count itself',
+        'There is basically no reason to keep reading'
+      ],
+      feedbackZh: '✅ 正解。对博客类内容，用户更关心“值不值得点开原文读细节”，而不是先给它贴一个系统分类标签。',
+      feedbackEn: '✅ Correct. For blog content, the user-first question is whether it is worth opening for detail, not which internal bucket it belongs to.'
+    };
+  }
+
+  return {
+    questionZh: '如果你只看这一屏，最值得带走的信息是什么？',
+    questionEn: 'If you only look at this one screen, what is the most useful thing to take away?',
+    choicesZh: [
+      `这条内容真正想传达的是：${signal}`,
+      '这主要只是作者随手发的一条无关紧要的状态',
+      '重点在于这条内容有没有拿到很多互动，而不是说了什么',
+      '这条内容基本没有明确观点或信息量'
+    ],
+    choicesEn: [
+      `The real takeaway is: ${signal}`,
+      'This is mainly a throwaway status update with little importance',
+      'The main point is how much engagement it got, not what it says',
+      'This post has basically no clear viewpoint or useful information'
+    ],
+    feedbackZh: '✅ 正解。这里更像用户视角的阅读判断：如果你只停留几秒，你应该先带走哪一个真正有用的信息。',
+    feedbackEn: '✅ Correct. This is a more user-centered reading decision: if you only pause for a few seconds, what is the one useful thing you should take away?'
+  };
+}
+
+function estimateReadingMeta(entry) {
+  const words = signalWordCount(entry.text);
+  if (entry.type === 'podcast') {
+    return {
+      zh: `📜 transcript ${words.toLocaleString()} 词`,
+      en: `📜 ${words.toLocaleString()} transcript words`
+    };
+  }
+  if (entry.type === 'blog') {
+    return {
+      zh: `📄 正文 ${words.toLocaleString()} 词`,
+      en: `📄 ${words.toLocaleString()} words`
+    };
+  }
+  return {
+    zh: `✍️ 正文 ${words.toLocaleString()} 词`,
+    en: `✍️ ${words.toLocaleString()} words`
+  };
+}
+
+function primaryLinkLabel(item) {
+  if (item.type === 'podcast') return t('立即打开原视频 ↗', 'OPEN VIDEO NOW ↗');
+  if (item.type === 'blog') return t('立即打开原文 ↗', 'OPEN ARTICLE NOW ↗');
+  return t('立即打开原帖 ↗', 'OPEN POST NOW ↗');
+}
+
+function secondaryLinkLabel(item) {
+  if (item.type === 'podcast') return t('查看原视频 ↗', 'VIEW VIDEO ↗');
+  if (item.type === 'blog') return t('查看原文 ↗', 'VIEW ARTICLE ↗');
+  return t('查看原帖 ↗', 'VIEW ORIGINAL ↗');
+}
+
+function renderStatsRow(item) {
+  if (item.type === 'x') {
+    return `
+      <div class="news-stats">
+        <span class="hot-score">🔥 ${item.score.toLocaleString()} ${t('热度', 'heat')}</span>
+        <span class="stat-divider">·</span>
+        <span class="stat-item">❤️ ${item.likes.toLocaleString()} ${t('赞', 'likes')}</span>
+        <span class="stat-divider">·</span>
+        <span class="stat-item">🔁 ${item.retweets.toLocaleString()} ${t('转发', 'RT')}</span>
+        <span class="stat-divider">·</span>
+        <span class="stat-item">💬 ${item.replies.toLocaleString()} ${t('回复', 'replies')}</span>
+      </div>
+    `;
+  }
+
+  const readingMeta = estimateReadingMeta(item);
+  return `
+    <div class="news-stats">
+      <span class="hot-score">🔥 ${item.score.toLocaleString()} ${t('排序分', 'rank score')}</span>
+      <span class="stat-divider">·</span>
+      <span class="stat-item">${esc(lang === 'zh' ? readingMeta.zh : readingMeta.en)}</span>
+      <span class="stat-divider">·</span>
+      <span class="stat-item">${esc(item.type === 'podcast' ? t('🎙 深度来源', '🎙 long-form source') : t('📚 深度来源', '📚 long-form source'))}</span>
+    </div>
+  `;
+}
+
+async function fetchJsonWithFallback(urls) {
+  let lastError = null;
+  for (const url of urls) {
+    try {
+      const res = await fetch(`${url}?v=${Date.now()}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('Feed fetch failed');
+}
+
+async function fetchAllFeeds() {
+  const [x, podcasts, blogs] = await Promise.all([
+    fetchJsonWithFallback(FEED_SOURCES.x),
+    fetchJsonWithFallback(FEED_SOURCES.podcasts),
+    fetchJsonWithFallback(FEED_SOURCES.blogs)
+  ]);
+  return { x, podcasts, blogs };
+}
+
+function buildXEntry(builder, tweet) {
+  return {
+    type: 'x',
+    source: 'x',
+    name: builder.name,
+    handle: builder.handle,
+    bio: builder.bio || '',
+    text: tweet.text || '',
+    url: tweet.url,
+    createdAt: tweet.createdAt,
+    likes: tweet.likes || 0,
+    retweets: tweet.retweets || 0,
+    replies: tweet.replies || 0,
+    score: scoreX(tweet),
+    titleZh: getLocalizedField(tweet, 'title', 'zh'),
+    titleEn: getLocalizedField(tweet, 'title', 'en') || firstSentence(tweet.text),
+    summaryZh: getLocalizedField(tweet, 'summary', 'zh'),
+    summaryEn: getLocalizedField(tweet, 'summary', 'en'),
+    hasZh: hasStrictZh(tweet, ['title', 'summary', 'text']) || hasStrictZh(builder, ['name', 'bio']),
+    lowSignal: isLowSignalXTweet(tweet)
+  };
+}
+
+function buildPodcastEntry(episode) {
+  const titleEn = getLocalizedField(episode, 'title', 'en') || 'Podcast Episode';
+  const derivedSummaryEn = getLocalizedField(episode, 'summary', 'en') || extractLongformSummary(episode.transcript || episode.description || '');
+  return {
+    type: 'podcast',
+    source: 'podcast',
+    name: episode.name || 'Podcast',
+    handle: 'podcast',
+    bio: t('播客更新', 'Podcast update'),
+    text: episode.transcript || episode.summary || episode.description || '',
+    url: episode.url,
+    createdAt: episode.publishedAt || episode.createdAt,
+    likes: 0,
+    retweets: 0,
+    replies: 0,
+    score: scoreGeneric(episode.publishedAt || episode.createdAt, 1200),
+    titleZh: getLocalizedField(episode, 'title', 'zh'),
+    titleEn,
+    summaryZh: getLocalizedField(episode, 'summary', 'zh'),
+    summaryEn: derivedSummaryEn,
+    hasZh: hasStrictZh(episode, ['title', 'summary', 'transcript']),
+    lowSignal: false
+  };
+}
+
+function buildBlogEntry(post) {
+  const titleEn = getLocalizedField(post, 'title', 'en') || 'Blog Post';
+  return {
+    type: 'blog',
+    source: 'blog',
+    name: post.name || post.source || 'Blog',
+    handle: 'blog',
+    bio: t('博客更新', 'Blog update'),
+    text: post.content || post.excerpt || post.summary || '',
+    url: post.url,
+    createdAt: post.publishedAt || post.createdAt,
+    likes: 0,
+    retweets: 0,
+    replies: 0,
+    score: scoreGeneric(post.publishedAt || post.createdAt, 900),
+    titleZh: getLocalizedField(post, 'title', 'zh'),
+    titleEn,
+    summaryZh: getLocalizedField(post, 'summary', 'zh'),
+    summaryEn: getLocalizedField(post, 'summary', 'en'),
+    hasZh: hasStrictZh(post, ['title', 'summary', 'content']),
+    lowSignal: false
+  };
+}
+
+function buildInteractiveItem(entry, rank) {
+  const category = keywordCategory(entry.text);
+  const summaryLine = splitSentences(entry.text).slice(0, 2).join(' ');
+  const readingNote = deriveReadingNote(entry, category);
+  const userChoices = buildUserChoices(entry, category);
+  return {
+    ...entry,
+    rank,
+    quickSummaryZh: entry.summaryZh || summaryLine || entry.titleZh || entry.titleEn,
+    quickSummaryEn: entry.summaryEn || summaryLine || entry.titleEn,
+    noteZh: entry.summaryZh || readingNote.zh,
+    noteEn: entry.summaryEn || readingNote.en,
+    choiceQZh: userChoices.questionZh,
+    choiceQEn: userChoices.questionEn,
+    choicesZh: userChoices.choicesZh,
+    choicesEn: userChoices.choicesEn,
+    correctIdx: 0,
+    feedbackZh: userChoices.feedbackZh,
+    feedbackEn: userChoices.feedbackEn,
+    dragTermsZh: ['来源', '名称', '主题', '发布日期'],
+    dragTermsEn: ['Source', 'Name', 'Theme', 'Published'],
+    dragMatchesZh: [
+      deriveSourceLabel(entry, 'zh'),
+      entry.type === 'x' ? `@${entry.handle}` : entry.name,
+      category.zh,
+      formatDateForLang(entry.createdAt, 'zh')
+    ],
+    dragMatchesEn: [
+      deriveSourceLabel(entry, 'en'),
+      entry.type === 'x' ? `@${entry.handle}` : entry.name,
+      category.en,
+      formatDateForLang(entry.createdAt, 'en')
+    ],
+    tags: category.tags.concat([entry.source]).slice(0, 4)
+  };
+}
+
+function buildGameItems(bundle) {
+  const collected = [];
+
+  (bundle.x?.x || []).forEach(builder => {
+    (builder.tweets || []).forEach(tweet => collected.push(buildXEntry(builder, tweet)));
+  });
+
+  (bundle.podcasts?.podcasts || []).forEach(episode => {
+    collected.push(buildPodcastEntry(episode));
+  });
+
+  (bundle.blogs?.blogs || []).forEach(post => {
+    collected.push(buildBlogEntry(post));
+  });
+
+  const filtered = collected.filter(entry => !entry.lowSignal);
+
+  filtered.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+  });
+
+  const selected = [];
+  const seenKeys = new Set();
+
+  for (const entry of filtered) {
+    const dedupeKey = entry.type === 'x' ? `x:${entry.handle}` : `${entry.type}:${entry.name}`;
+    if (seenKeys.has(dedupeKey)) continue;
+    selected.push(entry);
+    seenKeys.add(dedupeKey);
+    if (selected.length >= 5) break;
+  }
+
+  if (selected.length < 5) {
+    for (const entry of filtered) {
+      if (selected.includes(entry)) continue;
+      selected.push(entry);
+      if (selected.length >= 5) break;
+    }
+  }
+
+  return selected.map((entry, idx) => buildInteractiveItem(entry, idx + 1));
+}
+
+function updateLandingText() {
+  document.documentElement.lang = lang === 'zh' ? 'zh' : 'en';
+  document.getElementById('btn-zh').classList.toggle('active', lang === 'zh');
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('logo-main').textContent = t('AI 每日闯关', 'AI DAILY QUEST');
+  document.getElementById('logo-sub').textContent = 'DAILY AI KNOWLEDGE GAME';
+  document.getElementById('mode-title').textContent = t('── 选择你的闯关模式 ──', '── CHOOSE YOUR MODE ──');
+  document.getElementById('m1-name').textContent = t('快速通关', 'SPEED RUN');
+  document.getElementById('m1-time').textContent = t('≈ 2 分钟', '≈ 2 min');
+  document.getElementById('m1-desc').innerHTML = t('5 条精华，一眼扫完<br>适合快速了解今天发生了什么', '5 signals in one sweep<br>Best for a fast daily catch-up');
+  document.getElementById('m2-name').textContent = t('标准闯关', 'NORMAL MODE');
+  document.getElementById('m2-time').textContent = t('≈ 5 分钟', '≈ 5 min');
+  document.getElementById('m2-desc').innerHTML = t('原文线索 + 选择题<br>在真实 feed 上做轻交互', 'Source signal + quiz<br>Light interaction on real feed data');
+  document.getElementById('m3-name').textContent = t('深度探索', 'DEEP DIVE');
+  document.getElementById('m3-time').textContent = t('≈ 10 分钟', '≈ 10 min');
+  document.getElementById('m3-desc').innerHTML = t('拖拽配对 + 结构阅读<br>不改 UI，只把数据改成真实 feed', 'Drag match + structured reading<br>Same UI, now powered by real feed data');
+
+  const xBuilders = FEED_DATA?.x?.stats?.xBuilders || 0;
+  const podcasts = FEED_DATA?.podcasts?.stats?.podcastEpisodes || 0;
+  const blogs = FEED_DATA?.blogs?.stats?.blogPosts || 0;
+  document.getElementById('source-line').textContent = t(
+    `来源：follow-builders 的公开 feed，自动更新，无需产品自身 API${xBuilders || podcasts || blogs ? ` · X ${xBuilders} / 播客 ${podcasts} / 博客 ${blogs}` : ''}`,
+    `Source: public follow-builders feed, auto-updated, no product-side API required${xBuilders || podcasts || blogs ? ` · X ${xBuilders} / podcasts ${podcasts} / blogs ${blogs}` : ''}`
+  );
+  document.getElementById('play-again-btn').textContent = t('再来一次', 'PLAY AGAIN');
+  document.getElementById('share-btn').textContent = t('分享战绩', 'SHARE');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(node => node.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  currentScreen = id;
+}
+
+function showLanding() {
+  currentLevel = 0;
+  score = 0;
+  showScreen('landing');
+  updateLandingText();
+}
+
+function showLoading(callback) {
+  const overlay = document.getElementById('loading');
+  const bar = document.getElementById('loading-bar');
+  const msg = document.getElementById('loading-msg');
+  overlay.style.display = 'flex';
+  const msgs = lang === 'zh'
+    ? ['正在抓取 follow-builders feed...', '正在汇总 X / 播客 / 博客...', '正在按热度与时间整理关卡...', '关卡准备完成']
+    : ['Fetching follow-builders feed...', 'Merging X / podcasts / blogs...', 'Preparing levels by signal and recency...', 'Levels ready'];
+  let i = 0;
+  bar.style.width = '0%';
+  const iv = setInterval(() => {
+    bar.style.width = `${(i + 1) * 25}%`;
+    msg.textContent = msgs[i];
+    i += 1;
+    if (i >= msgs.length) {
+      clearInterval(iv);
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        callback();
+      }, 400);
+    }
+  }, 420);
+}
+
+async function ensureFeedLoaded(force = false) {
+  const isStale = !LAST_FETCHED_AT || (Date.now() - LAST_FETCHED_AT > 15 * 60 * 1000);
+  if (GAME_ITEMS.length && !force && !isStale) return;
+  try {
+    FEED_DATA = await fetchAllFeeds();
+    GAME_ITEMS = buildGameItems(FEED_DATA);
+    LAST_FETCHED_AT = Date.now();
+    updateLandingText();
+  } catch (error) {
+    if (!GAME_ITEMS.length) throw error;
+  }
+}
+
+async function startGame(mode) {
+  gameMode = mode;
+  currentLevel = 0;
+  score = 0;
+  showLoading(async () => {
+    try {
+      await ensureFeedLoaded(true);
+      showScreen('game');
+      renderLevel();
+    } catch (error) {
+      document.getElementById('loading').style.display = 'none';
+      alert(t('无法读取远端 feed，请稍后重试。', 'Unable to load the remote feed right now.'));
+    }
+  });
+}
+
+function currentItem() {
+  return GAME_ITEMS[currentLevel];
+}
+
+function currentTitle(item) {
+  return lang === 'zh' ? item.titleZh || item.titleEn : item.titleEn;
+}
+
+function currentSubtitle(item) {
+  return lang === 'zh' && item.titleZh && item.titleEn && item.titleZh !== item.titleEn ? item.titleEn : '';
+}
+
+function currentQuickSummary(item) {
+  return lang === 'zh' ? item.quickSummaryZh || item.quickSummaryEn : item.quickSummaryEn;
+}
+
+function currentNote(item) {
+  return lang === 'zh' ? item.noteZh || item.noteEn : item.noteEn;
+}
+
+function renderLevel() {
+  const total = GAME_ITEMS.length || 5;
+  const item = currentItem();
+  if (!item) {
+    showLanding();
+    return;
+  }
+
+  document.getElementById('level-display').textContent = `LEVEL ${currentLevel + 1}/${total}`;
+  document.getElementById('progress-fill').style.width = `${(currentLevel / total) * 100}%`;
+  document.getElementById('progress-text').textContent = t(`${currentLevel} / ${total} 完成`, `${currentLevel} / ${total} done`);
+  document.getElementById('score-display').textContent = `★ ${score} pts`;
+
+  let html = `
+    <div class="news-card" data-rank="# ${currentLevel + 1} TODAY">
+      <div class="news-meta">
+        ${getSourceBadge(item.url)}
+        <span class="author-tag">${esc(item.type === 'x' ? `@${item.handle}` : item.name)}</span>
+        <span class="date-tag">📅 ${esc(formatDate(item.createdAt))}</span>
+      </div>
+      ${renderStatsRow(item)}
+      <div class="news-title-main">${esc(currentTitle(item))}</div>
+      ${currentSubtitle(item) ? `<div class="news-title-sub">${esc(currentSubtitle(item))}</div>` : ''}
+      <div style="margin: 14px 0 4px;">
+        <a href="${esc(item.url)}" target="_blank" rel="noopener"><button class="pixel-btn ${item.type === 'x' ? 'blue' : 'yellow'}">${primaryLinkLabel(item)}</button></a>
+      </div>
+  `;
+
+  if (gameMode === 'quick') html += renderQuick(item);
+  if (gameMode === 'normal') html += renderNormal(item);
+  if (gameMode === 'deep') html += renderDeep(item);
+  html += `</div>`;
+
+  html += `<div class="nav-area" id="nav-area">`;
+  if (gameMode === 'quick') html += `<button class="pixel-btn yellow" onclick="nextLevel(10)">${t('下一条 ▶', 'NEXT ▶')}</button>`;
+  html += `<a href="${esc(item.url)}" target="_blank" rel="noopener"><button class="pixel-btn ghost">${secondaryLinkLabel(item)}</button></a>`;
+  html += `</div>`;
+
+  document.getElementById('news-stage').innerHTML = html;
+  if (gameMode === 'deep') initDragGame(item);
+}
+
+function renderQuick(item) {
+  return `
+    <div class="quick-summary">${esc(currentQuickSummary(item))}</div>
+    <div class="quick-tags">${item.tags.map(tag => `<span class="quick-tag">${esc(tag)}</span>`).join('')}</div>
+    <div class="analogy-box" data-label="${esc(t('阅读提示', 'READING NOTE'))}" style="margin-top:16px;">
+      ${esc(currentNote(item))}
+    </div>
+    <div class="analogy-box" data-label="${esc(t('原文节选', 'SOURCE EXCERPT'))}" style="margin-top:16px; font-size:13px; color:var(--muted);">
+      ${esc(cleanText(item.text).slice(0, 220))}${cleanText(item.text).length > 220 ? '...' : ''}
+    </div>
+  `;
+}
+
+function renderNormal(item) {
+  const choices = (lang === 'zh' ? item.choicesZh : item.choicesEn)
+    .map((choice, idx) => `<button class="choice-btn" onclick="checkAnswer(${idx})">${['🅐', '🅑', '🅒', '🅓'][idx]} ${esc(choice)}</button>`)
+    .join('');
+
+  return `
+    <div class="analogy-box" data-label="${esc(t('阅读提示', 'READING NOTE'))}">${esc(currentNote(item))}</div>
+    ${lang === 'zh' && !item.hasZh ? `<div class="analogy-box" data-label="${esc(t('语言说明', 'LANGUAGE NOTE'))}">${esc('当前公开 feed 这条内容没有中文字段，所以保留原文，但界面与交互保持中文。')}</div>` : ''}
+    <div class="game-zone">
+      <div class="game-zone-title">🕹 ${t('闯关问答', 'QUIZ')}</div>
+      <div class="choice-question">${esc(lang === 'zh' ? item.choiceQZh : item.choiceQEn)}</div>
+      <div class="choice-options">${choices}</div>
+      <div class="feedback-box" id="feedback-box"></div>
+    </div>
+  `;
+}
+
+function renderDeep(item) {
+  const terms = lang === 'zh' ? item.dragTermsZh : item.dragTermsEn;
+  const matches = lang === 'zh' ? item.dragMatchesZh : item.dragMatchesEn;
+  const shuffled = [...matches].sort(() => Math.random() - 0.5);
+  const leftCol = terms.map((term, idx) =>
+    `<div class="drag-item" draggable="true" id="drag-${idx}" data-idx="${idx}" ondragstart="dragStart(event)">${esc(term)}</div>`
+  ).join('');
+  const rightCol = shuffled.map((match, idx) =>
+    `<div class="drop-zone" id="drop-${idx}" data-label="${esc(match)}" ondragover="dragOver(event)" ondrop="drop(event)">${esc(match)}</div>`
+  ).join('');
+
+  return `
+    <div class="analogy-box" data-label="${esc(t('阅读提示', 'READING NOTE'))}">${esc(currentNote(item))}</div>
+    <div class="game-zone">
+      <div class="game-zone-title">🎯 ${t('拖拽配对', 'DRAG & MATCH')}</div>
+      <div class="drag-game">
+        <div class="drag-col">
+          <div class="drag-col-title">${t('字段', 'FIELD')}</div>
+          ${leftCol}
+        </div>
+        <div class="drag-col">
+          <div class="drag-col-title">${t('对应值', 'VALUE')}</div>
+          ${rightCol}
+        </div>
+      </div>
+      <div class="feedback-box" id="feedback-box"></div>
+    </div>
+  `;
+}
+
+function checkAnswer(chosenIdx) {
+  const item = currentItem();
+  const correct = item.correctIdx;
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach(btn => btn.classList.add('disabled'));
+  btns[chosenIdx].classList.add(chosenIdx === correct ? 'correct' : 'wrong');
+  if (chosenIdx !== correct) btns[correct].classList.add('correct');
+
+  const fb = document.getElementById('feedback-box');
+  fb.textContent = lang === 'zh' ? item.feedbackZh : item.feedbackEn;
+  fb.classList.add('show');
+  if (chosenIdx !== correct) fb.classList.add('wrong-fb');
+
+  const pts = chosenIdx === correct ? 20 : 5;
+  score += pts;
+  showScorePopup(pts, chosenIdx === correct);
+  updateScoreHeader();
+
+  document.getElementById('nav-area').innerHTML = `
+    <button class="pixel-btn yellow" onclick="nextLevel(0)">${currentLevel < GAME_ITEMS.length - 1 ? t('下一关 ▶', 'NEXT LEVEL ▶') : t('查看结果 🏆', 'SEE RESULTS 🏆')}</button>
+    <a href="${esc(item.url)}" target="_blank" rel="noopener"><button class="pixel-btn ghost">${secondaryLinkLabel(item)}</button></a>
+  `;
+}
+
+function updateScoreHeader() {
+  document.getElementById('score-display').textContent = `★ ${score} pts`;
+}
+
+function showScorePopup(pts, correct) {
+  const popup = document.createElement('div');
+  popup.textContent = correct ? `+${pts} pts ✨` : `+${pts} pts`;
+  popup.style.cssText = `position:fixed;top:80px;right:30px;font-family:'Press Start 2P',monospace;font-size:14px;color:${correct ? 'var(--green)' : 'var(--accent)'};z-index:300;animation:popUp 1.5s ease forwards;pointer-events:none;text-shadow:2px 2px 0 #000;`;
+  const style = document.createElement('style');
+  style.textContent = `@keyframes popUp{0%{opacity:1;transform:translateY(0) scale(1)}80%{opacity:1;transform:translateY(-40px) scale(1.2)}100%{opacity:0;transform:translateY(-60px) scale(0.8)}}`;
+  document.head.appendChild(style);
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 1500);
+  setTimeout(() => style.remove(), 1800);
+}
+
+function initDragGame(item) {
+  matchedCount = 0;
+  window.__dragItem = item;
+}
+
+function dragStart(e) {
+  dragSource = e.target;
+  e.target.classList.add('dragging');
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+
+function drop(e) {
+  e.preventDefault();
+  const zone = e.currentTarget;
+  zone.classList.remove('drag-over');
+  if (!dragSource) return;
+  const item = window.__dragItem;
+  const terms = lang === 'zh' ? item.dragTermsZh : item.dragTermsEn;
+  const matches = lang === 'zh' ? item.dragMatchesZh : item.dragMatchesEn;
+  const term = dragSource.textContent.trim();
+  const label = zone.dataset.label;
+  const termIdx = terms.indexOf(term);
+  const correct = matches[termIdx] === label;
+  dragSource.classList.remove('dragging');
+
+  if (correct) {
+    dragSource.classList.add('matched');
+    dragSource.draggable = false;
+    zone.classList.add('filled');
+    zone.textContent = `${term} → ${label}`;
+    matchedCount += 1;
+    score += 5;
+    updateScoreHeader();
+    if (matchedCount === terms.length) {
+      const fb = document.getElementById('feedback-box');
+      fb.textContent = t('🎉 全部配对完成，信息都来自真实 feed。', '🎉 All matches complete, all values come from the real feed.');
+      fb.classList.add('show');
+      document.getElementById('nav-area').innerHTML = `
+        <button class="pixel-btn yellow" onclick="nextLevel(0)">${currentLevel < GAME_ITEMS.length - 1 ? t('下一关 ▶', 'NEXT LEVEL ▶') : t('查看结果 🏆', 'SEE RESULTS 🏆')}</button>
+        <a href="${esc(item.url)}" target="_blank" rel="noopener"><button class="pixel-btn ghost">${secondaryLinkLabel(item)}</button></a>
+      `;
+    }
+  } else {
+    dragSource.classList.add('wrong');
+    setTimeout(() => dragSource && dragSource.classList.remove('wrong'), 400);
+  }
+  dragSource = null;
+}
+
+function nextLevel(bonusPts) {
+  score += bonusPts;
+  currentLevel += 1;
+  if (currentLevel >= GAME_ITEMS.length) {
+    showComplete();
+  } else {
+    renderLevel();
+    document.getElementById('news-stage').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function showComplete() {
+  document.getElementById('complete-title').textContent = t('🎉 今日通关！', '🎉 QUEST COMPLETE!');
+  document.getElementById('final-score').textContent = score;
+  const rank = score >= 80 ? t('🏆 高阶玩家', '🏆 HIGH SCORE')
+    : score >= 50 ? t('⭐ 稳定输出', '⭐ SOLID RUN')
+    : t('🌱 今日打卡', '🌱 DAILY CHECK-IN');
+  document.getElementById('complete-msg').textContent = t(
+    `你已完成今日 Top ${GAME_ITEMS.length} 动态浏览，段位：${rank}。`,
+    `You completed today's top ${GAME_ITEMS.length} signals. Rank: ${rank}.`
+  );
+  document.getElementById('digest-header').textContent = t('── 今日完整精华 ──', '── TODAY\'S FULL DIGEST ──');
+
+  document.getElementById('digest-list').innerHTML = GAME_ITEMS.map((item, idx) => `
+    <div style="border:1px solid var(--border); padding:18px; margin-bottom:14px; background:var(--card);">
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+        ${getSourceBadge(item.url)}
+        <span style="font-family:'Space Mono',monospace; font-size:10px; color:var(--accent2);">${esc(item.type === 'x' ? `@${item.handle}` : item.name)}</span>
+        <span style="font-family:'Space Mono',monospace; font-size:10px; color:var(--muted);">📅 ${esc(formatDate(item.createdAt))}</span>
+      </div>
+      <div style="font-family:'Space Mono',monospace; font-size:10px; color:var(--muted); margin-bottom:8px;">
+        #${idx + 1} · 🔥 ${item.score.toLocaleString()} · ❤️ ${item.likes.toLocaleString()} · 🔁 ${item.retweets.toLocaleString()} · 💬 ${item.replies.toLocaleString()}
+      </div>
+      <div style="font-size:15px; font-weight:700; margin-bottom:6px; line-height:1.5;">${esc(currentTitle(item))}</div>
+      ${currentSubtitle(item) ? `<div style="font-size:11px; color:var(--muted); font-family:'Space Mono',monospace; margin-bottom:10px;">${esc(currentSubtitle(item))}</div>` : ''}
+      <div style="font-size:13px; color:var(--muted); line-height:1.7; margin-bottom:12px; border-left:2px solid var(--border); padding-left:12px;">${esc(cleanText(item.text).slice(0, 280))}${cleanText(item.text).length > 280 ? '...' : ''}</div>
+      <a href="${esc(item.url)}" target="_blank" rel="noopener" style="font-family:'Space Mono',monospace; font-size:10px; color:var(--accent2); text-decoration:none; padding:5px 12px; border:1px solid rgba(64,192,240,0.3); display:inline-block;">
+        ↗ ${secondaryLinkLabel(item).replace(' ↗', '')}
+      </a>
+    </div>
+  `).join('');
+
+  showScreen('complete');
+}
+
+function shareScore() {
+  const text = t(
+    `我今天在 AI 每日闯关得了 ${score} 分，内容来自 follow-builders 实时 feed。`,
+    `I scored ${score} pts on AI Daily Quest, powered by the live follow-builders feed.`
+  );
+  if (navigator.share) {
+    navigator.share({ title: t('AI 每日闯关', 'AI Daily Quest'), text });
+  } else {
+    navigator.clipboard?.writeText(text);
+    alert(t('战绩已复制到剪贴板。', 'Score copied to clipboard.'));
+  }
+}
+
+function setLang(nextLang) {
+  lang = nextLang;
+  updateLandingText();
+  if (currentScreen === 'game') renderLevel();
+  if (currentScreen === 'complete') showComplete();
+}
+
+const today = new Date();
+document.getElementById('date-badge').textContent = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
+updateLandingText();
+document.getElementById('loading').style.display = 'none';
+</script>
+  <script>
+    (() => {
+      const STORAGE_KEYS = {
+        user: "noScrollUser",
+        notes: "noScrollNotes",
+        history: "noScrollHistory",
+        progress: "noScrollProgress"
+      };
+
+      const state = {
+        activeKey: "",
+        lastObservedTitle: "",
+        langPatched: false
+      };
+
+      function ui(zh, en) {
+        return typeof lang !== "undefined" && lang === "en" ? en : zh;
+      }
+
+      function parseJson(value, fallback) {
+        try {
+          return value ? JSON.parse(value) : fallback;
+        } catch (error) {
+          return fallback;
+        }
+      }
+
+      function getUser() {
+        return parseJson(localStorage.getItem(STORAGE_KEYS.user), null);
+      }
+
+      function userScopedKey(baseKey) {
+        const user = getUser();
+        if (!user || !user.username) {
+          return `${baseKey}:guest`;
+        }
+        return `${baseKey}:${String(user.username).trim().toLowerCase()}`;
+      }
+
+      function setUser(user) {
+        if (user) {
+          localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
+        } else {
+          localStorage.removeItem(STORAGE_KEYS.user);
+        }
+      }
+
+      function getNotes() {
+        return parseJson(localStorage.getItem(userScopedKey(STORAGE_KEYS.notes)), {});
+      }
+
+      function saveNotes(notes) {
+        localStorage.setItem(userScopedKey(STORAGE_KEYS.notes), JSON.stringify(notes));
+      }
+
+      function getHistory() {
+        return parseJson(localStorage.getItem(userScopedKey(STORAGE_KEYS.history)), []);
+      }
+
+      function saveHistory(items) {
+        localStorage.setItem(userScopedKey(STORAGE_KEYS.history), JSON.stringify(items.slice(0, 90)));
+      }
+
+      function getProgress() {
+        return parseJson(localStorage.getItem(userScopedKey(STORAGE_KEYS.progress)), {
+          lastReadAt: "",
+          lastTitle: "",
+          streakDays: 0,
+          activeDates: {}
+        });
+      }
+
+      function saveProgress(progress) {
+        localStorage.setItem(userScopedKey(STORAGE_KEYS.progress), JSON.stringify(progress));
+      }
+
+      function dayKey(value) {
+        return new Date(value).toISOString().slice(0, 10);
+      }
+
+      function byId(id) {
+        return document.getElementById(id);
+      }
+
+      function ensureHomeButton() {
+        const existing = document.querySelector(".global-home-btn");
+        if (existing) {
+          existing.textContent = ui("返回主页", "Home");
+          return;
+        }
+
+        const button = document.createElement("a");
+        button.href = "#landing";
+        button.className = "global-home-btn";
+        button.textContent = ui("返回主页", "Home");
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          goHome();
+        });
+        document.body.appendChild(button);
+      }
+
+      function ensureCalendarShortcut() {
+        const landing = byId("landing");
+        const existing = document.querySelector(".calendar-shortcut");
+        if (existing) {
+          existing.textContent = ui("查看阅读日历与笔记", "View Calendar & Notes");
+          return;
+        }
+        if (!landing) return;
+        const anchor = document.querySelector(".hero-slogan, .logo-tag, .auth-card");
+        if (!anchor) return;
+        const button = document.createElement("a");
+        button.href = "#reading-calendar";
+        button.className = "calendar-shortcut";
+        button.textContent = ui("查看阅读日历与笔记", "View Calendar & Notes");
+        button.addEventListener("click", (event) => {
+          event.preventDefault();
+          goHome();
+          requestAnimationFrame(() => {
+            byId("reading-calendar")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        });
+        anchor.insertAdjacentElement("afterend", button);
+      }
+
+      function goHome() {
+        const landing = byId("landing");
+        const game = byId("game");
+        const complete = byId("complete");
+        const loading = document.querySelector(".loading-overlay");
+        if (loading) {
+          loading.style.display = "none";
+          loading.classList.remove("show", "active");
+        }
+        if (landing) {
+          landing.style.display = "";
+          landing.style.visibility = "visible";
+          landing.style.opacity = "1";
+          landing.classList.add("active");
+        }
+        if (game) {
+          game.style.display = "none";
+          game.style.visibility = "";
+          game.style.opacity = "";
+          game.classList.remove("active");
+        }
+        if (complete) {
+          complete.style.display = "none";
+          complete.style.visibility = "";
+          complete.style.opacity = "";
+          complete.classList.remove("active");
+        }
+        document.body.classList.remove("game-mode", "complete-mode");
+        window.location.hash = "landing";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function prepareGameView() {
+        const game = byId("game");
+        const complete = byId("complete");
+        const loading = document.querySelector(".loading-overlay");
+        if (loading) {
+          loading.style.display = "";
+        }
+        if (game) {
+          game.style.display = "";
+          game.style.visibility = "visible";
+          game.style.opacity = "1";
+          game.classList.add("active");
+        }
+        if (complete) {
+          complete.style.display = "none";
+          complete.style.visibility = "";
+          complete.style.opacity = "";
+        }
+      }
+
+      function ensureModeButtonsRecoverView() {
+        if (typeof window.startGame === "function" && window.startGame.__noScrollRecovery !== true) {
+          const originalStartGame = window.startGame;
+          window.startGame = function patchedStartGame(...args) {
+            prepareGameView();
+            const result = originalStartGame.apply(this, args);
+            setTimeout(prepareGameView, 0);
+            setTimeout(prepareGameView, 120);
+            setTimeout(prepareGameView, 800);
+            setTimeout(prepareGameView, 1600);
+            return result;
+          };
+          window.startGame.__noScrollRecovery = true;
+        }
+
+        const candidates = Array.from(document.querySelectorAll("button, .mode-card, [onclick*='startGame']"));
+        candidates.forEach((node) => {
+          const text = node.textContent || "";
+          const onclick = node.getAttribute ? node.getAttribute("onclick") || "" : "";
+          const looksLikeMode = /startGame|快速|快读|标准|深度|2\s*min|5\s*min|10\s*min|quick|normal|deep/i.test(`${text} ${onclick}`);
+          if (!looksLikeMode || node.dataset.modeRecovery === "true") return;
+          node.dataset.modeRecovery = "true";
+          node.addEventListener("click", () => {
+            prepareGameView();
+            setTimeout(prepareGameView, 0);
+            setTimeout(prepareGameView, 120);
+            setTimeout(prepareGameView, 800);
+            setTimeout(prepareGameView, 1600);
+          }, true);
+        });
+      }
+
+      function updateBranding() {
+        const main = document.querySelector(".logo-main");
+        const sub = document.querySelector(".logo-sub");
+        const tag = document.querySelector(".logo-tag");
+        const brandMain = ui("别刷了", "No Scroll!");
+        const brandTag = ui("Daily Builder Signal Quest", "Daily Builder Signal Quest");
+        if (main && main.textContent !== brandMain) main.textContent = brandMain;
+        if (sub && sub.textContent !== "NO SCROLL!") sub.textContent = "NO SCROLL!";
+        if (tag && tag.textContent !== brandTag) tag.textContent = brandTag;
+
+        if (tag && !document.querySelector(".hero-slogan")) {
+          const slogan = document.createElement("div");
+          slogan.className = "hero-slogan";
+          slogan.textContent = ui("只看 Top 信息，就像坐在硅谷办公室。", "Only the top signals. It feels like sitting inside a Silicon Valley office.");
+          tag.insertAdjacentElement("afterend", slogan);
+        } else {
+          const slogan = document.querySelector(".hero-slogan");
+          if (slogan) slogan.textContent = ui("只看 Top 信息，就像坐在硅谷办公室。", "Only the top signals. It feels like sitting inside a Silicon Valley office.");
+        }
+      }
+
+      function entryFromPage() {
+        const titleNode = document.querySelector(".news-title-main, .news-title, h2, h3");
+        const title = titleNode ? titleNode.textContent.trim() : "";
+        const linkNode = document.querySelector("a[href^='http']");
+        const url = linkNode ? linkNode.href : "";
+        const source = Array.from(document.querySelectorAll(".meta-item, .source-chip, .source-tag, .source-label"))
+          .map((node) => node.textContent.trim())
+          .filter(Boolean)
+          .slice(0, 3)
+          .join(" · ");
+        if (!title) {
+          return null;
+        }
+        return {
+          key: url || title,
+          title,
+          url,
+          source,
+          seenAt: new Date().toISOString()
+        };
+      }
+
+      function getActorLabel() {
+        const handle = document.querySelector(".author-handle, .builder-handle, .news-handle, .meta-handle");
+        if (handle && handle.textContent.trim()) return handle.textContent.trim();
+        const chips = Array.from(document.querySelectorAll(".meta-item, .source-chip, .source-tag, .source-label, .author-tag"));
+        const probable = chips.map((node) => node.textContent.trim()).find((text) => /^@|OpenAI|Anthropic|Cursor|Perplexity|YouTube|X\b/i.test(text));
+        return probable || ui("该团队", "the team");
+      }
+
+      function rewritePerspectiveText(text, actor) {
+        if (!text) return text;
+        const hasFirstPerson = /\b(we|our|we're|weve|we've|i|my|me)\b/i.test(text);
+        if (!hasFirstPerson) return text;
+        let next = text
+          .replace(/\bwe are\b/gi, "they are")
+          .replace(/\bwe're\b/gi, "they're")
+          .replace(/\bwe have\b/gi, "they have")
+          .replace(/\bwe've\b/gi, "they've")
+          .replace(/\bour\b/gi, "their")
+          .replace(/\bwe\b/gi, "they")
+          .replace(/\bI\b/g, actor)
+          .replace(/\bmy\b/gi, `${actor}'s`);
+        if (!new RegExp(`^${actor.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(next)) {
+          next = `${actor}: ${next}`;
+        }
+        return next;
+      }
+
+      function rewriteCurrentCopy() {
+        const actor = getActorLabel();
+        const titleNode = document.querySelector(".news-title-main, .news-title, h2");
+        if (titleNode && titleNode.dataset.rewritten !== "true") {
+          const raw = titleNode.textContent.trim();
+          const next = rewritePerspectiveText(raw, actor);
+          if (next !== raw) {
+            titleNode.textContent = next;
+          }
+          titleNode.dataset.rewritten = "true";
+        }
+
+        const noteBox = Array.from(document.querySelectorAll(".analogy-box, .reading-note, .tip-box, .news-insight, .hint-box, .summary-box"))
+          .find((node) => /阅读提示|可以先抓|这句话|我们|we\b/i.test(node.textContent || ""));
+        if (noteBox && noteBox.dataset.rewritten !== "true") {
+          const text = noteBox.textContent.replace(/\s+/g, " ").trim();
+          const cleaned = rewritePerspectiveText(text, actor)
+            .replace(/^阅读提示[:：]?\s*/i, "")
+            .replace(/^你可以先抓这句话来理解它在说什么[:：]?\s*/i, "");
+          noteBox.textContent = ui(`阅读提示：这条更新来自 ${actor}。核心信息是：${cleaned}`, `Reading note: This update comes from ${actor}. The core signal is: ${cleaned}`);
+          noteBox.dataset.rewritten = "true";
+        }
+      }
+
+      function rememberCurrentEntry() {
+        const user = getUser();
+        if (!user) return;
+
+        const entry = entryFromPage();
+        if (!entry || entry.key === state.activeKey) return;
+
+        state.activeKey = entry.key;
+        const history = getHistory().filter((item) => item.key !== entry.key);
+        history.unshift(entry);
+        saveHistory(history);
+        const progress = getProgress();
+        const key = dayKey(entry.seenAt);
+        progress.lastReadAt = entry.seenAt;
+        progress.lastTitle = entry.title;
+        progress.activeDates[key] = (progress.activeDates[key] || 0) + 1;
+        progress.streakDays = Object.keys(progress.activeDates).length;
+        saveProgress(progress);
+        renderAuthCard();
+      }
+
+      function buildCalendarMarkup() {
+        const user = getUser();
+        if (!user) {
+          return "";
+        }
+
+        const history = getHistory();
+        const notes = getNotes();
+        const progress = getProgress();
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const first = new Date(year, month, 1);
+        const last = new Date(year, month + 1, 0);
+        const totalDays = last.getDate();
+        const offset = (first.getDay() + 6) % 7;
+        const noteDates = new Set(
+          Object.values(notes)
+            .filter((item) => item && item.updatedAt)
+            .map((item) => dayKey(item.updatedAt))
+        );
+        const historyByDate = history.reduce((acc, item) => {
+          const key = dayKey(item.seenAt || Date.now());
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(item);
+          return acc;
+        }, {});
+        const weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        let cells = weekday.map((label) => `<div class="calendar-day">${label}</div>`).join("");
+
+        for (let i = 0; i < offset; i += 1) {
+          cells += `<div class="calendar-cell"></div>`;
+        }
+
+        for (let day = 1; day <= totalDays; day += 1) {
+          const date = new Date(year, month, day);
+          const key = dayKey(date);
+          const hasHistory = Boolean(historyByDate[key]?.length);
+          const hasNote = noteDates.has(key);
+          const count = progress.activeDates[key] || 0;
+          const classes = ["calendar-cell"];
+          if (hasHistory) classes.push("has-history");
+          if (hasNote) classes.push("has-note");
+          cells += `<button class="${classes.join(" ")}" type="button" data-calendar-date="${key}"><strong>${day}</strong>${hasNote ? `<span class="calendar-mark">${ui("★ 有笔记", "★ Notes")}</span>` : hasHistory ? `<span class="calendar-mark">${ui(`${count} 条记录`, `${count} reads`)}</span>` : ""}</button>`;
+        }
+
+        return `
+          <div class="calendar-panel" id="reading-calendar">
+            <div class="calendar-title">${ui("阅读日历", "Reading Calendar")}</div>
+            <div class="notes-copy">${ui("同一个用户名下的浏览进度、笔记和阅读历史会绑定在一起。点某一天，可以直接回看那天读过什么。", "Reading progress, notes, and history are stored under the same username. Click any day to review what you read.")}</div>
+            <div class="calendar-grid">${cells}</div>
+            <div class="calendar-detail" id="calendar-detail">${progress.lastReadAt ? `${ui("最近一次阅读", "Last read")}: ${new Date(progress.lastReadAt).toLocaleString()} · ${progress.lastTitle}` : ui("这个账号还没有留下阅读记录。", "This account has no reading history yet.")}</div>
+          </div>
+        `;
+      }
+
+      function bindCalendarDetail() {
+        const detail = byId("calendar-detail");
+        if (!detail) return;
+        const history = getHistory();
+        const notes = getNotes();
+        document.querySelectorAll("[data-calendar-date]").forEach((button) => {
+          button.onclick = () => {
+            const date = button.getAttribute("data-calendar-date");
+            const list = history.filter((item) => dayKey(item.seenAt || Date.now()) === date);
+            const noteTitles = Object.values(notes)
+              .filter((item) => item && item.updatedAt && dayKey(item.updatedAt) === date)
+              .map((item) => item.title);
+            detail.innerHTML = list.length
+              ? `<strong>${date}</strong><br>${list.slice(0, 5).map((item) => `- ${item.title}`).join("<br>")}${noteTitles.length ? `<br><br>${ui("笔记：", "Notes: ")}${noteTitles.join(" / ")}` : ""}`
+              : `<strong>${date}</strong><br>${ui("这一天还没有阅读记录。", "No reading history on this day.")}`;
+          };
+        });
+      }
+
+      function renderRecentActivity(container) {
+        const user = getUser();
+        const notes = getNotes();
+        const history = getHistory();
+        const review = document.createElement("div");
+        review.className = "notes-meta";
+        if (!user) {
+          review.textContent = ui("游客模式可以直接看内容。登录后会在当前浏览器保存你的笔记和最近阅读记录。", "Guest mode can read directly. Log in to save notes and recent reading history in this browser.");
+          return review;
+        }
+
+        const noteCount = Object.keys(notes).length;
+        const historyCount = history.length;
+        const latest = history[0];
+        review.innerHTML = latest
+          ? ui(`当前账号：<strong>${user.username}</strong>。已保存 ${noteCount} 条笔记，记录 ${historyCount} 次阅读。最近一条：${latest.title}`, `Current account: <strong>${user.username}</strong>. ${noteCount} notes saved, ${historyCount} reads tracked. Latest: ${latest.title}`)
+          : ui(`当前账号：<strong>${user.username}</strong>。你已经登录，后续阅读和笔记都会留在这里。`, `Current account: <strong>${user.username}</strong>. You are logged in, and future notes will stay here.`);
+        const progress = getProgress();
+        if (user && typeof lang !== "undefined" && lang === "zh") {
+          review.innerHTML = review.innerHTML.replace("最近一条：", `活跃 ${progress.streakDays} 天。最近一条：`);
+        } else if (user) {
+          review.innerHTML = review.innerHTML.replace("Latest:", `Active ${progress.streakDays} days. Latest:`);
+        }
+        return review;
+      }
+
+      function renderAuthCard() {
+        const landing = byId("landing");
+        if (!landing) return;
+
+        let card = document.querySelector(".auth-card");
+        if (!card) {
+          card = document.createElement("section");
+          card.className = "auth-card";
+          const anchor = document.querySelector(".mode-grid, .mode-cards, .nav-area");
+          if (anchor && anchor.parentNode) {
+            anchor.parentNode.insertBefore(card, anchor);
+          } else {
+            landing.appendChild(card);
+          }
+        }
+
+        const user = getUser();
+        const notes = getNotes();
+        const history = getHistory();
+        const latest = history[0] ? history[0].title : "";
+        const signature = `${typeof lang !== "undefined" ? lang : "zh"}|${user ? user.username : "guest"}|${Object.keys(notes).length}|${history.length}|${latest}`;
+        if (card.dataset.signature === signature) {
+          return;
+        }
+        card.dataset.signature = signature;
+        card.innerHTML = `
+          <div class="auth-title">${ui("Notebook 登录", "Notebook Login")}</div>
+          <div class="auth-copy">${ui("可以直接游客浏览；如果你愿意登录，本地会长期保留你的阅读笔记和最近阅读习惯，后面回来还能复盘。", "You can browse as a guest. If you log in, this browser will keep your reading notes and habits for later review.")}</div>
+          <div class="auth-grid">
+            <input class="auth-input" id="auth-username" placeholder="username" value="${user ? user.username : ""}">
+            <input class="auth-input" id="auth-password" type="password" placeholder="password">
+          </div>
+          <div class="auth-actions">
+            <button class="pixel-btn" id="auth-login-btn">${ui("登录并保存笔记", "Log in & save notes")}</button>
+            <button class="pixel-btn secondary" id="auth-guest-btn">${ui("直接看看", "Browse as guest")}</button>
+          </div>
+          <div class="auth-status" id="auth-status">${user ? ui("已登录，本地笔记功能已开启。", "Logged in. Local notebook is enabled.") : ui("未登录也能直接阅读；登录后会在这台设备里保留你的记录。", "You can read without logging in. Log in to keep records on this device.")}</div>
+        `;
+        card.appendChild(renderRecentActivity(card));
+        card.insertAdjacentHTML("beforeend", buildCalendarMarkup());
+        bindCalendarDetail();
+
+        const loginBtn = byId("auth-login-btn");
+        const guestBtn = byId("auth-guest-btn");
+        if (loginBtn) {
+          loginBtn.onclick = () => {
+            const username = (byId("auth-username")?.value || "").trim();
+            const password = (byId("auth-password")?.value || "").trim();
+            const status = byId("auth-status");
+            if (!username || !password) {
+              if (status) status.textContent = ui("输入 username 和 password 后就能在本地保存笔记。", "Enter a username and password to save notes locally.");
+              return;
+            }
+            setUser({ username, passwordLength: password.length, savedAt: Date.now() });
+            if (status) status.textContent = ui(`已登录为 ${username}，之后你的阅读记录和笔记会保存在本地浏览器。`, `Logged in as ${username}. Your reading history and notes will be saved in this browser.`);
+            renderAuthCard();
+          };
+        }
+
+        if (guestBtn) {
+          guestBtn.onclick = () => {
+            const status = byId("auth-status");
+            if (status) status.textContent = ui("当前是游客模式，你可以随时开始看。", "Guest mode is on. You can start reading anytime.");
+          };
+        }
+      }
+
+      function upsertNotesPanel() {
+        const game = byId("game");
+        if (!game || game.style.display === "none") return;
+        const entry = entryFromPage();
+        if (!entry) return;
+
+        let panel = document.querySelector(".notes-panel");
+        if (!panel) {
+          panel = document.createElement("section");
+          panel.className = "notes-panel";
+          game.appendChild(panel);
+        }
+
+        const user = getUser();
+        const notes = getNotes();
+        const saved = notes[entry.key] || {};
+        const signature = `${typeof lang !== "undefined" ? lang : "zh"}|${entry.key}|${saved.updatedAt || 0}|${user ? user.username : "guest"}`;
+        if (panel.dataset.signature === signature) {
+          return;
+        }
+        panel.dataset.signature = signature;
+        panel.innerHTML = `
+          <div class="notes-title">${ui("阅读笔记", "Reading Notes")}</div>
+          <div class="notes-copy">${ui("这部分比做一道机械题更有价值。写下你真正记住的观点，之后回来可以直接复盘。", "This is more useful than a mechanical quiz. Write down the idea you actually want to remember and review it later.")}</div>
+          <textarea class="notes-input" id="notes-input" placeholder="${user ? ui("写一句你真的记住的观点...", "Write one idea you actually want to remember...") : ui("登录后可以在这里长期保存你的阅读笔记。", "Log in to save reading notes here long-term.")}">${saved.body || ""}</textarea>
+          <div class="auth-actions">
+            <button class="pixel-btn" id="save-note-btn">${user ? ui("保存笔记", "Save note") : ui("登录后保存", "Log in to save")}</button>
+          </div>
+          <div class="notes-meta">${saved.updatedAt ? ui("上次保存：", "Last saved: ") + new Date(saved.updatedAt).toLocaleString() : ui("这条笔记还没有保存。", "This note has not been saved yet.")}</div>
+        `;
+
+        const saveBtn = byId("save-note-btn");
+        if (saveBtn) {
+          saveBtn.onclick = () => {
+            const status = panel.querySelector(".notes-meta");
+            if (!getUser()) {
+              if (status) status.textContent = ui("当前是游客模式。回到主页登录后，就能在本地保存和回看笔记。", "You are in guest mode. Go back home and log in to save and review notes locally.");
+              return;
+            }
+            const value = (byId("notes-input")?.value || "").trim();
+            const nextNotes = getNotes();
+            nextNotes[entry.key] = {
+              title: entry.title,
+              url: entry.url,
+              body: value,
+              updatedAt: Date.now()
+            };
+            saveNotes(nextNotes);
+            if (status) status.textContent = ui("已保存到你的本地 notebook。", "Saved to your local notebook.");
+            renderAuthCard();
+          };
+        }
+      }
+
+      function refreshChoiceCopy() {
+        const game = byId("game");
+        if (!game || game.style.display === "none") return;
+        if (typeof lang !== "undefined" && lang === "en") return;
+
+        const titleNode = document.querySelector(".news-title-main, .news-title, h2");
+        const choiceButtons = Array.from(document.querySelectorAll(".choice-btn"));
+        if (!titleNode || choiceButtons.length < 2) return;
+
+        const title = titleNode.textContent.trim();
+        const heading = Array.from(game.querySelectorAll("h3, h4, .question-title, .quiz-title, .question-text"))
+          .find((node) => node.textContent && /哪一种|哪个|最接近|主题|问题/.test(node.textContent));
+        if (heading && heading.dataset.userCopy !== "true") {
+          heading.textContent = "如果你只有半分钟，这条内容最值得你带走的是什么？";
+          heading.dataset.userCopy = "true";
+        }
+
+        choiceButtons.forEach((button) => {
+          if (button.dataset.userCopy === "true") return;
+          const raw = button.textContent.trim();
+          let next = raw;
+          if (/主要在讲|最接近|主题|Builder|观点|趋势|工作流|代理|产品/.test(raw)) {
+            next = `这条最值得我先抓住一个明确观点，主题就是“${title.slice(0, 24)}${title.length > 24 ? "..." : ""}”`;
+          } else if (/无关|日常状态|工具无关|不相关/.test(raw)) {
+            next = "这条更像路过信息，我可以先跳过，不占今天的注意力";
+          } else if (/招聘/.test(raw)) {
+            next = "这更偏招聘或岗位线索，不是我现在最想吸收的内容";
+          } else if (/闲聊|没有任何|碎片|灌水/.test(raw)) {
+            next = "这更像碎片闲聊，不值得我为它停下来";
+          } else if (/打开|原文|继续看|深读/.test(raw)) {
+            next = "如果我感兴趣，下一步应该直接打开原文或原视频";
+          }
+          button.textContent = next;
+          button.dataset.userCopy = "true";
+        });
+      }
+
+      function softenDeepTasks() {
+        const game = byId("game");
+        if (!game || game.style.display === "none") return;
+        const dragItems = game.querySelectorAll(".drag-item");
+        if (!dragItems.length) return;
+
+        let helper = document.querySelector(".notes-copy.deep-helper");
+        if (!helper) {
+          helper = document.createElement("div");
+          helper.className = "notes-copy deep-helper";
+          helper.textContent = ui("如果你觉得配对题太机械，可以直接在下方写一句自己的理解，把这条真正变成你的信息。", "If matching feels too mechanical, write your own takeaway below and turn this update into something useful.");
+          const zone = game.querySelector(".game-zone");
+          const dragGame = game.querySelector(".drag-game");
+          if (zone && dragGame) {
+            zone.insertBefore(helper, dragGame);
+          }
+        } else {
+          helper.textContent = ui("如果你觉得配对题太机械，可以直接在下方写一句自己的理解，把这条真正变成你的信息。", "If matching feels too mechanical, write your own takeaway below and turn this update into something useful.");
+          const zone = game.querySelector(".game-zone");
+          const dragGame = game.querySelector(".drag-game");
+          if (zone && dragGame && helper.parentElement !== zone) {
+            zone.insertBefore(helper, dragGame);
+          }
+        }
+      }
+
+      function ensureDeepMatchFallback() {
+        const game = byId("game");
+        if (!game || game.style.display === "none") return;
+
+        const dragItems = Array.from(game.querySelectorAll(".drag-item"));
+        const dropZones = Array.from(game.querySelectorAll(".drop-zone"));
+        if (!dragItems.length || !dropZones.length) return;
+
+        document.querySelectorAll(".drag-game > .deep-match-helper, .drag-col > .deep-match-helper").forEach((node) => node.remove());
+
+        let helper = document.querySelector(".deep-match-helper");
+        if (!helper) {
+          const helper = document.createElement("div");
+          helper.className = "deep-match-helper";
+          helper.textContent = ui("拖不动也没关系：先点左侧选项，再点右侧框，即可完成配对。", "If dragging does not work, click a left item first, then click a right box to match it.");
+          const zone = game.querySelector(".game-zone");
+          const dragGame = game.querySelector(".drag-game");
+          if (zone && dragGame) {
+            zone.insertBefore(helper, dragGame);
+          }
+        } else {
+          helper.textContent = ui("拖不动也没关系：先点左侧选项，再点右侧框，即可完成配对。", "If dragging does not work, click a left item first, then click a right box to match it.");
+        }
+
+        dragItems.forEach((item, index) => {
+          if (!item.id) {
+            item.id = `deep-drag-${index}`;
+          }
+          item.setAttribute("draggable", "true");
+          if (item.dataset.matchFallback === "true") return;
+          item.dataset.matchFallback = "true";
+
+          item.addEventListener("click", (event) => {
+            event.preventDefault();
+            dragItems.forEach((node) => node.classList.remove("is-selected"));
+            item.classList.add("is-selected");
+            game.dataset.selectedDragId = item.id;
+          });
+
+          item.addEventListener("dragstart", (event) => {
+            game.dataset.selectedDragId = item.id;
+            item.classList.add("is-selected");
+            if (event.dataTransfer) {
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", item.id);
+            }
+          });
+        });
+
+        dropZones.forEach((zone) => {
+          if (zone.dataset.matchFallback === "true") return;
+          zone.dataset.matchFallback = "true";
+
+          const fillZone = (item) => {
+            if (!item) return;
+            zone.textContent = item.textContent.trim();
+            zone.classList.add("is-filled");
+            zone.dataset.filledValue = item.dataset.value || item.dataset.match || item.textContent.trim();
+            zone.dataset.filledBy = item.id;
+            item.style.opacity = "0.45";
+            item.classList.remove("is-selected");
+            game.dataset.selectedDragId = "";
+          };
+
+          zone.addEventListener("dragover", (event) => {
+            event.preventDefault();
+            if (event.dataTransfer) {
+              event.dataTransfer.dropEffect = "move";
+            }
+          });
+
+          zone.addEventListener("drop", (event) => {
+            event.preventDefault();
+            const id = event.dataTransfer?.getData("text/plain") || game.dataset.selectedDragId;
+            fillZone(id ? byId(id) : null);
+          });
+
+          zone.addEventListener("click", (event) => {
+            event.preventDefault();
+            const id = game.dataset.selectedDragId;
+            if (!id) {
+              zone.classList.add("is-selected");
+              setTimeout(() => zone.classList.remove("is-selected"), 180);
+              return;
+            }
+            fillZone(byId(id));
+          });
+        });
+      }
+
+      function syncEnhancements() {
+        updateBranding();
+        ensureHomeButton();
+        ensureCalendarShortcut();
+        ensureModeButtonsRecoverView();
+        ensureLangSwitchRefresh();
+        renderAuthCard();
+        rewriteCurrentCopy();
+        refreshChoiceCopy();
+        upsertNotesPanel();
+        softenDeepTasks();
+        ensureDeepMatchFallback();
+        rememberCurrentEntry();
+      }
+
+      function forceEnhancementRerender() {
+        const authCard = document.querySelector(".auth-card");
+        const notesPanel = document.querySelector(".notes-panel");
+        if (authCard) authCard.dataset.signature = "";
+        if (notesPanel) notesPanel.dataset.signature = "";
+        document.querySelectorAll("[data-rewritten='true'], [data-user-copy='true']").forEach((node) => {
+          node.dataset.rewritten = "";
+          node.dataset.userCopy = "";
+        });
+        syncEnhancements();
+      }
+
+      function ensureLangSwitchRefresh() {
+        if (state.langPatched) return;
+        state.langPatched = true;
+
+        if (typeof window.setLang === "function") {
+          const originalSetLang = window.setLang;
+          window.setLang = function patchedSetLang(nextLang) {
+            const result = originalSetLang.apply(this, arguments);
+            setTimeout(forceEnhancementRerender, 0);
+            setTimeout(forceEnhancementRerender, 120);
+            return result;
+          };
+        }
+
+        ["btn-zh", "btn-en"].forEach((id) => {
+          const button = byId(id);
+          if (!button) return;
+          button.addEventListener("click", () => {
+            setTimeout(forceEnhancementRerender, 0);
+            setTimeout(forceEnhancementRerender, 120);
+          });
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        syncEnhancements();
+        const observer = new MutationObserver(() => {
+          if (state.syncFrame) cancelAnimationFrame(state.syncFrame);
+          state.syncFrame = requestAnimationFrame(syncEnhancements);
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      });
+    })();
+  </script>
+</body>
+</html>
